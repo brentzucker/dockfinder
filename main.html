@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CSV Viewer</title>
+
+  <!-- DataTables CSS -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+
+  <!-- jQuery + DataTables + PapaParse -->
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    table.dataTable thead th { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <h1>CSV Viewer with Sorting</h1>
+  <table id="csvTable" class="display" width="100%"></table>
+
+  <script>
+    async function loadCSV(url) {
+      const response = await fetch(url);
+      const csvText = await response.text();
+
+      const parsed = Papa.parse(csvText.trim(), {
+        header: false,
+        skipEmptyLines: true
+      });
+
+      const data = parsed.data;
+      const headers = data.shift();
+
+      // Find index of the column with "dock" in the header (case-insensitive)
+      const dockColIndex = headers.findIndex(h => h.toLowerCase().includes("dock"));
+
+      $('#csvTable').DataTable({
+        data: data,
+        columns: headers.map(header => ({ title: header })),
+        paging: false,
+        order: dockColIndex !== -1 ? [[dockColIndex, "desc"]] : []
+      });
+    }
+
+    loadCSV('scrape.csv');
+  </script>
+</body>
+</html>
