@@ -294,7 +294,7 @@ if __name__ == "__main__":
         "loan_type",                        # Loan type from loan features
         "rate",                             # Loan rate from loan features
         "remaining_balance",                # Remaining balance from loan features
-        "home_total"                        # Total from home features
+        "monthly_payment"                   # Total from home features
     ]
     df = pd.DataFrame(columns=[])
     # Try reading in df from scrape.csv if it exists
