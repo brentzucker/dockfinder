@@ -197,7 +197,7 @@ def main():
 
     # Prepare DataFrame
     columns = [
-        "contains_dock", "city", "url", "address", "bedrooms", "bathrooms", "sqft",
+        "contains_dock", "contains_communitydock", "contains_lanier", "city", "url", "address", "bedrooms", "bathrooms", "sqft",
         "listing_price", "cash_down_payment", "loan_type", "rate", "remaining_balance", "monthly_payment"
     ]
     df = load_existing_dataframe(CSV_FILE)
@@ -222,9 +222,13 @@ def main():
         financials = get_financials(html)
         description = get_description(html)
         contains_dock = contains_str(description, 'dock')
+        contains_communitydock = contains_str(description, 'community dock')
+        contains_lanier = contains_str(description, 'lanier')
 
         record = [
             contains_dock,
+            contains_communitydock,
+            contains_lanier,
             listing_data['city'],
             listing_data['canonical_url'],
             listing_data['address'],
