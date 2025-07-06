@@ -2,50 +2,117 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>CSV Viewer</title>
+  <title>Robust CSV Viewer</title>
 
-  <!-- DataTables CSS -->
+  <!-- CSS Libraries -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-
-  <!-- jQuery + DataTables + PapaParse -->
-  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/colreorder/1.6.3/css/colReorder.dataTables.min.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    table.dataTable thead th { background-color: #f2f2f2; }
+    body { font-family: sans-serif; margin: 20px; }
+    table { width: 100% !important; }
+    th, td { white-space: nowrap; }
+    .filter-row input { width: 100%; box-sizing: border-box; }
+    .delete-btn { cursor: pointer; color: red; font-weight: bold; margin-left: 5px; }
+    #dockCount { font-size: 1.1em; font-weight: bold; margin-bottom: 10px; }
   </style>
 </head>
 <body>
-  <h1>CSV Viewer with Sorting</h1>
-  <table id="csvTable" class="display" width="100%"></table>
 
-  <script>
-    async function loadCSV(url) {
-      const response = await fetch(url);
-      const csvText = await response.text();
+<h1>📊 CSV Viewer (Responsive + Editable)</h1>
+<div id="dockCount">Loading...</div>
+<table id="csvTable" class="display nowrap" width="100%"></table>
 
-      const parsed = Papa.parse(csvText.trim(), {
-        header: false,
-        skipEmptyLines: true
-      });
+<!-- JS Libraries -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/colreorder/1.6.3/js/dataTables.colReorder.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
-      const data = parsed.data;
-      const headers = data.shift();
+<script>
+  async function loadCSV(url) {
+    const response = await fetch(url);
+    const text = await response.text();
 
-      // Find index of the column with "dock" in the header (case-insensitive)
-      const dockColIndex = headers.findIndex(h => h.toLowerCase().includes("dock"));
+    const parsed = Papa.parse(text.trim(), {
+      header: false,
+      skipEmptyLines: true
+    });
 
-      $('#csvTable').DataTable({
-        data: data,
-        columns: headers.map(header => ({ title: header })),
-        paging: false,
-        order: dockColIndex !== -1 ? [[dockColIndex, "desc"]] : []
-      });
+    const data = parsed.data;
+    const headers = data.shift();
+
+    // Find index of the "contains_dock" column
+    const dockColIndex = headers.findIndex(h => h.toLowerCase().includes("contains_dock"));
+
+    // Count how many "true" values in that column
+    let dockCount = 0;
+    if (dockColIndex !== -1) {
+      dockCount = data.filter(row => row[dockColIndex]?.toLowerCase().trim() === "true").length;
     }
 
-    loadCSV('scrape.csv');
-  </script>
+    document.getElementById("dockCount").textContent =
+      dockColIndex !== -1
+        ? `Docks near you: ${dockCount}`
+        : `⚠️ No docks near you`;
+
+    // Enhance cells: make URLs clickable
+    const enhancedData = data.map(row =>
+      row.map(cell => {
+        const trimmed = cell.trim();
+        const isURL = /^https?:\/\/\S+$/i.test(trimmed);
+        return isURL
+          ? `<a href="${trimmed}" target="_blank" rel="noopener noreferrer">${trimmed}</a>`
+          : trimmed;
+      })
+    );
+
+    // Add delete buttons to column headers
+    const headersWithDelete = headers.map((h, i) => ({
+      title: `${h} <span class="delete-btn" data-index="${i}">×</span>`
+    }));
+
+    // Render DataTable
+    const table = $('#csvTable').DataTable({
+      data: enhancedData,
+      columns: headersWithDelete,
+      colReorder: true,
+      responsive: true,
+      paging: false,
+      order: getDockSort(headers),
+      initComplete: function () {
+        const api = this.api();
+        const headerRow = $('#csvTable thead');
+        const filterRow = $('<tr class="filter-row"></tr>').appendTo(headerRow);
+
+        api.columns().every(function () {
+          const column = this;
+          $('<input type="text" placeholder="Filter..." />')
+            .appendTo($('<th></th>').appendTo(filterRow))
+            .on('keyup change clear', function () {
+              if (column.search() !== this.value) {
+                column.search(this.value).draw();
+              }
+            });
+        });
+      }
+    });
+
+    // Delete column handler
+    $('#csvTable').on('click', '.delete-btn', function (e) {
+      e.stopPropagation();
+      const colIndex = $(this).data('index');
+      table.column(colIndex).visible(false);
+    });
+  }
+
+  function getDockSort(headers) {
+    const index = headers.findIndex(h => h.toLowerCase().includes("dock"));
+    return index !== -1 ? [[index, "desc"]] : [];
+  }
+
+  loadCSV('scrape.csv'); // Replace with your actual file name if different
+</script>
 </body>
 </html>
