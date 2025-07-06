@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Robust CSV Viewer</title>
+  <title>Dock Finder</title>
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500&display=swap" rel="stylesheet">
 
   <!-- CSS Libraries -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -10,19 +13,135 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
-    body { font-family: sans-serif; margin: 20px; }
-    table { width: 100% !important; }
-    th, td { white-space: nowrap; }
-    .filter-row input { width: 100%; box-sizing: border-box; }
-    .delete-btn { cursor: pointer; color: red; font-weight: bold; margin-left: 5px; }
-    #dockCount { font-size: 1.1em; font-weight: bold; margin-bottom: 10px; }
+    body {
+      font-family: 'Fredoka', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4fafd;
+      color: #1e2a3a;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    header {
+      background: #e0f0ff;
+      border-bottom: 4px solid #0077b6;
+      padding: 30px 0;
+    }
+
+    .header-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .header-container img {
+      height: 80px;
+    }
+
+    .header-container h1 {
+      font-size: 2.2rem;
+      margin: 0;
+      color: #003049;
+      text-align: center;
+    }
+
+    main {
+      padding: 40px 0;
+    }
+
+    #dockCount {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin-bottom: 25px;
+      color: #0077b6;
+      text-align: center;
+    }
+
+    .dataTables_wrapper {
+      width: 100% !important;
+    }
+
+    table.dataTable {
+      background-color: white;
+      border-radius: 10px;
+      width: 100% !important;
+      margin: 0;
+      overflow-x: auto;
+      border-spacing: 0;
+      border-collapse: collapse;
+    }
+
+    table.dataTable th,
+    table.dataTable td {
+      white-space: normal !important;
+      padding: 10px;
+      text-align: left;
+    }
+
+    .filter-row input {
+      width: 100%;
+      padding: 6px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .delete-btn {
+      cursor: pointer;
+      color: red;
+      font-weight: bold;
+      margin-left: 5px;
+    }
+
+    a {
+      color: #0077b6;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    @media screen and (max-width: 768px) {
+      .header-container {
+        flex-direction: column;
+        text-align: center;
+      }
+
+      .header-container img {
+        margin: 0;
+      }
+
+      .header-container h1 {
+        font-size: 1.8rem;
+      }
+    }
   </style>
 </head>
 <body>
 
-<h1>📊 CSV Viewer (Responsive + Editable)</h1>
-<div id="dockCount">Loading...</div>
-<table id="csvTable" class="display nowrap" width="100%"></table>
+<header>
+  <div class="container">
+    <div class="header-container">
+      <img src="logo.png" alt="Dock Finder Logo"> <!-- Replace with actual logo path -->
+      <h1>Dock Finder</h1>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="container">
+    <div id="dockCount">Loading...</div>
+    <table id="csvTable" class="display" width="100%"></table>
+  </div>
+</main>
 
 <!-- JS Libraries -->
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -43,10 +162,8 @@
     const data = parsed.data;
     const headers = data.shift();
 
-    // Find index of the "contains_dock" column
     const dockColIndex = headers.findIndex(h => h.toLowerCase().includes("contains_dock"));
 
-    // Count how many "true" values in that column
     let dockCount = 0;
     if (dockColIndex !== -1) {
       dockCount = data.filter(row => row[dockColIndex]?.toLowerCase().trim() === "true").length;
@@ -54,10 +171,9 @@
 
     document.getElementById("dockCount").textContent =
       dockColIndex !== -1
-        ? `Docks near you: ${dockCount}`
+        ? `🚤 Docks near you: ${dockCount}`
         : `⚠️ No docks near you`;
 
-    // Enhance cells: make URLs clickable
     const enhancedData = data.map(row =>
       row.map(cell => {
         const trimmed = cell.trim();
@@ -68,12 +184,10 @@
       })
     );
 
-    // Add delete buttons to column headers
     const headersWithDelete = headers.map((h, i) => ({
       title: `${h} <span class="delete-btn" data-index="${i}">×</span>`
     }));
 
-    // Render DataTable
     const table = $('#csvTable').DataTable({
       data: enhancedData,
       columns: headersWithDelete,
@@ -99,7 +213,6 @@
       }
     });
 
-    // Delete column handler
     $('#csvTable').on('click', '.delete-btn', function (e) {
       e.stopPropagation();
       const colIndex = $(this).data('index');
@@ -112,7 +225,8 @@
     return index !== -1 ? [[index, "desc"]] : [];
   }
 
-  loadCSV('scrape.csv'); // Replace with your actual file name if different
+  loadCSV('scrape.csv'); // Replace with your actual file path
 </script>
+
 </body>
 </html>
